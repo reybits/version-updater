@@ -24,36 +24,36 @@ A Bash script to update version numbers in various project files.
 
 - **xcode**: Updates `CURRENT_PROJECT_VERSION` and `MARKETING_VERSION` in Xcode project files.
 ```
-CURRENT_PROJECT_VERSION = X.Y.Z;
-MARKETING_VERSION = X.Y.Z;
+CURRENT_PROJECT_VERSION = 1.2.3;
+MARKETING_VERSION = 1.2.3;
 ```
 
 - **json**: Updates `androidVersion`, `iosVersion`, and `otherVersion` fields in JSON files.
 ```json
 {
     "value": {
-        "androidVersion": "6.18.1",
-        "iosVersion": "6.18.1",
-        "otherVersion": "6.18.1"
+        "androidVersion": "1.2.3",
+        "iosVersion": "1.2.3",
+        "otherVersion": "1.2.3"
     }
 }
 ```
 
 - **cpp**: Updates C/C++ version string assignments.
 ```cpp
-const char* Version = "X.Y.Z";
+const char* Version = "1.2.3";
 ```
 
 - **gradle**: Updates `versionCode` and `versionName` in Gradle build files.
 ```gradle
 versionCode = 10203 // as X*10000 + Y*100 + Z*10
-versionName = "X.Y.Z"
+versionName = "1.2.3"
 ```
 
 - **html**: Updates HTML attributes and JS version query strings.
 ```html
-<body version="X.Y.Z" build="X.Y.Z">
-<script src="js/main.js?ver=X.Y.Z"></script>
+<body version="1.2.3" build="1.2.3">
+<script src="js/main.js?ver=1.2.3"></script>
 ```
 
 - **yand**: Updates `CACHE_NAME` constant in JS files (requires `BUNDLE_NAME`).
