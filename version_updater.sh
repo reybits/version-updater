@@ -49,10 +49,6 @@ remove_bak() {
 # ------------------------------------------------------------------------------
 
 update_html() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local regex_build="s/build=\"([0-9]+\.[0-9]+\.[0-9]+)\"/build=\"${version}\"/g"
     local regex_version="s/version=\"([0-9]+\.[0-9]+\.[0-9]+)\"/version=\"${version}\"/g"
     local regex_js_versioning="s#js/main.js\?ver=[0-9]+\.[0-9]+\.[0-9]+#js/main.js?ver=${version}#"
@@ -67,10 +63,6 @@ update_html() {
 # ------------------------------------------------------------------------------
 
 update_yand() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local bundle = "$2"
     local version="s/const[[:space:]]*CACHE_NAME[[:space:]]*=[[:space:]]*\"${bundle}-v([0-9]+\.[0-9]+\.[0-9]+)\"/const CACHE_NAME = \"${bundle}-v${version}\"/g"
 
@@ -84,10 +76,6 @@ update_yand() {
 # ------------------------------------------------------------------------------
 
 update_cpp() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local version="s/char[[:space:]]*\*[[:space:]]*Version[[:space:]]*=[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/char* Version = \"${version}\"/g"
 
     sed -E -i .bak "${version}" "$1"
@@ -101,10 +89,6 @@ update_cpp() {
 # ------------------------------------------------------------------------------
 
 update_gradle() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local version_parts=(${version//\./ })
 
     local code=""
@@ -127,10 +111,6 @@ update_gradle() {
 # ------------------------------------------------------------------------------
 
 update_xcode() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local p_version="s/CURRENT_PROJECT_VERSION[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)/CURRENT_PROJECT_VERSION = ${version}/g"
     local m_version="s/MARKETING_VERSION[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)/MARKETING_VERSION = ${version}/g"
 
@@ -146,10 +126,6 @@ update_xcode() {
 # ------------------------------------------------------------------------------
 
 update_json() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     local androidVersion="s/\"androidVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"androidVersion\": \"${version}\"/g"
     local iosVersion="s/\"iosVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"iosVersion\": \"${version}\"/g"
     local otherVersion="s/\"otherVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"otherVersion\": \"${version}\"/g"
@@ -167,10 +143,6 @@ update_json() {
 # ------------------------------------------------------------------------------
 
 update_windows() {
-    if [ ! -f "$1" ]; then
-        return
-    fi
-
     # VALUE "FileVersion", "0.2.1.0"
     local fileVersion="s/\"FileVersion\",[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"FileVersion\", \"${version}.0\"/g"
     # VALUE "ProductVersion", "0.2.1.0"
@@ -184,6 +156,12 @@ update_windows() {
 }
 
 # ------------------------------------------------------------------------------
+
+if [ ! -f "${file_path}" ]; then
+    # Silently exit if file not found
+    # echo "File '${file_path}' not found!"
+    exit -1
+fi
 
 header() {
     echo "Updating version to '${version}' of type '${type}' in file '${file_path}'"
