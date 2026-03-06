@@ -25,7 +25,7 @@
 if [ "$#" -lt 3 ]; then
     echo "Usage $0 <TYPE> <VERSION> <PATH/TO/FILE> [BUNDLE_NAME]"
     echo "Where TYPE is one of: xcode, json, cpp, gradle, html, yand, windows"
-    exit -1
+    exit 1
 fi
 
 # ------------------------------------------------------------------------------
@@ -64,9 +64,9 @@ update_html() {
 
 update_yand() {
     local bundle="$2"
-    local version="s/const[[:space:]]*CACHE_NAME[[:space:]]*=[[:space:]]*\"${bundle}-v([0-9]+\.[0-9]+\.[0-9]+)\"/const CACHE_NAME = \"${bundle}-v${version}\"/g"
+    local regex="s/const[[:space:]]*CACHE_NAME[[:space:]]*=[[:space:]]*\"${bundle}-v([0-9]+\.[0-9]+\.[0-9]+)\"/const CACHE_NAME = \"${bundle}-v${version}\"/g"
 
-    sed -E -i .bak "${version}" "$1"
+    sed -E -i .bak "${regex}" "$1"
     remove_bak "$1"
 }
 
@@ -76,9 +76,9 @@ update_yand() {
 # ------------------------------------------------------------------------------
 
 update_cpp() {
-    local version="s/char[[:space:]]*\*[[:space:]]*Version[[:space:]]*=[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/char* Version = \"${version}\"/g"
+    local regex="s/char[[:space:]]*\*[[:space:]]*Version[[:space:]]*=[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/char* Version = \"${version}\"/g"
 
-    sed -E -i .bak "${version}" "$1"
+    sed -E -i .bak "${regex}" "$1"
     remove_bak "$1"
 }
 
@@ -126,9 +126,9 @@ update_xcode() {
 # ------------------------------------------------------------------------------
 
 update_json() {
-    local androidVersion="s/\"androidVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"androidVersion\": \"${version}\"/g"
-    local iosVersion="s/\"iosVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"iosVersion\": \"${version}\"/g"
-    local otherVersion="s/\"otherVersion\":[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"otherVersion\": \"${version}\"/g"
+    local androidVersion="s/\"androidVersion\":[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"androidVersion\": \"${version}\"/g"
+    local iosVersion="s/\"iosVersion\":[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"iosVersion\": \"${version}\"/g"
+    local otherVersion="s/\"otherVersion\":[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/\"otherVersion\": \"${version}\"/g"
 
     sed -E -i .bak -e "${androidVersion}" -e "${iosVersion}" -e "${otherVersion}" "$1"
     remove_bak "$1"
@@ -143,15 +143,18 @@ update_json() {
 # ------------------------------------------------------------------------------
 
 update_windows() {
+    local comma_version="${version//\./,}"
+
     # VALUE "FileVersion", "0.2.1.0"
-    local fileVersion="s/\"FileVersion\",[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"FileVersion\", \"${version}.0\"/g"
+    local fileVersion="s/\"FileVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"FileVersion\", \"${version}.0\"/g"
     # VALUE "ProductVersion", "0.2.1.0"
-    local productVersion="s/\"ProductVersion\",[[:space:]]\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"ProductVersion\", \"${version}.0\"/g"
+    local productVersion="s/\"ProductVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"ProductVersion\", \"${version}.0\"/g"
+    # FILEVERSION 1,0,3,0
+    local fileVersionNum="s/FILEVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/FILEVERSION ${comma_version},0/g"
+    # PRODUCTVERSION 1,0,3,0
+    local productVersionNum="s/PRODUCTVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/PRODUCTVERSION ${comma_version},0/g"
 
-    # FILEVERSION 1,0,3,1
-    # PRODUCTVERSION 1,0,3,1
-
-    cat "$1" | iconv -f utf-16 -t utf-8 | sed -E -e "${fileVersion}" -e "${productVersion}" | iconv -f utf-8 -t utf-16 >"$1.bak"
+    cat "$1" | iconv -f utf-16 -t utf-8 | sed -E -e "${fileVersion}" -e "${productVersion}" -e "${fileVersionNum}" -e "${productVersionNum}" | iconv -f utf-8 -t utf-16 >"$1.bak"
     mv "$1.bak" "$1"
 }
 
@@ -160,7 +163,7 @@ update_windows() {
 if [ ! -f "${file_path}" ]; then
     # Silently exit if file not found
     # echo "File '${file_path}' not found!"
-    exit -1
+    exit 1
 fi
 
 header() {
@@ -195,9 +198,9 @@ html)
 
 yand)
     header
-    if [ "$#" -lt 3 ]; then
+    if [ "$#" -lt 4 ]; then
         echo "Usage $0 <TYPE> <VERSION> <PATH/TO/FILE> <BUNDLE_NAME>"
-        exit -1
+        exit 1
     fi
     update_yand "${file_path}" "${4}"
     ;;
