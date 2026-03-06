@@ -63,7 +63,7 @@ update_html() {
 # ------------------------------------------------------------------------------
 
 update_yand() {
-    local bundle = "$2"
+    local bundle="$2"
     local version="s/const[[:space:]]*CACHE_NAME[[:space:]]*=[[:space:]]*\"${bundle}-v([0-9]+\.[0-9]+\.[0-9]+)\"/const CACHE_NAME = \"${bundle}-v${version}\"/g"
 
     sed -E -i .bak "${version}" "$1"
