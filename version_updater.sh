@@ -6,7 +6,7 @@
 #  and@reybits.dev
 #
 #  Version updater script.
-#  v0.5.1, 2026.01.02
+#  v0.5.2, 2026.03.06
 #
 #  Usage:
 #    ./version_updater.sh <TYPE> <VERSION> <PATH/TO/FILE> [BUNDLE_NAME]
