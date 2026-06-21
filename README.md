@@ -24,7 +24,7 @@ A Bash script to update version numbers in various project files.
 
 - **xcode**: Updates `CURRENT_PROJECT_VERSION` and `MARKETING_VERSION` in Xcode project files.
 ```
-CURRENT_PROJECT_VERSION = 1.2.3;
+CURRENT_PROJECT_VERSION = 10203 /* as X*10000 + Y*100 + Z*10 */;
 MARKETING_VERSION = 1.2.3;
 ```
 
@@ -52,7 +52,7 @@ versionName = "1.2.3"
 
 - **html**: Updates HTML attributes and JS version query strings.
 ```html
-<body version="1.2.3" build="1.2.3">
+<body version="1.2.3" build="10203"> <!-- as X*10000 + Y*100 + Z*10 -->
 <script src="js/main.js?ver=1.2.3"></script>
 ```
 

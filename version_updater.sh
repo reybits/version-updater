@@ -6,7 +6,7 @@
 #  and@reybits.dev
 #
 #  Version updater script.
-#  v0.5.2, 2026.03.06
+#  v0.5.3, 2026.06.21
 #
 #  Usage:
 #    ./version_updater.sh <TYPE> <VERSION> <PATH/TO/FILE> [BUNDLE_NAME]
@@ -43,13 +43,31 @@ remove_bak() {
 }
 
 # ------------------------------------------------------------------------------
+# Convert a marketing version "X.Y.Z" into a numeric build code.
+# Each component is zero-padded to two digits and concatenated (6.24.3 -> 62403).
+# ------------------------------------------------------------------------------
+
+version_to_code() {
+    local version_parts=(${1//\./ })
+
+    local code=""
+    for part in "${version_parts[@]}"; do
+        code+=$(printf "%02d" "$part")
+    done
+
+    echo $((10#$code))
+}
+
+# ------------------------------------------------------------------------------
 # Looking for version patterns:
-# build="X.Y.Z"
+# build="N" (numeric build code, like the gradle versionCode)
 # version="X.Y.Z"
 # ------------------------------------------------------------------------------
 
 update_html() {
-    local regex_build="s/build=\"([0-9]+\.[0-9]+\.[0-9]+)\"/build=\"${version}\"/g"
+    local code=$(version_to_code "${version}")
+
+    local regex_build="s/build=\"[0-9.]+\"/build=\"${code}\"/g"
     local regex_version="s/version=\"([0-9]+\.[0-9]+\.[0-9]+)\"/version=\"${version}\"/g"
     local regex_js_versioning="s#js/main.js\?ver=[0-9]+\.[0-9]+\.[0-9]+#js/main.js?ver=${version}#"
 
@@ -89,13 +107,7 @@ update_cpp() {
 # ------------------------------------------------------------------------------
 
 update_gradle() {
-    local version_parts=(${version//\./ })
-
-    local code=""
-    for part in "${version_parts[@]}"; do
-        code+=$(printf "%02d" "$part")
-    done
-    code=$((10#$code))
+    local code=$(version_to_code "${version}")
 
     local version_code="s/versionCode[[:space:]]*=[[:space:]]*([0-9]+)/versionCode = ${code}/g"
     local version_name="s/versionName[[:space:]]*=[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/versionName = \"${version}\"/g"
@@ -106,12 +118,14 @@ update_gradle() {
 
 # ------------------------------------------------------------------------------
 # Looking for version patterns:
-# CURRENT_PROJECT_VERSION = X.Y.Z
+# CURRENT_PROJECT_VERSION = N (numeric build, derived like the gradle versionCode)
 # MARKETING_VERSION = X.Y.Z
 # ------------------------------------------------------------------------------
 
 update_xcode() {
-    local p_version="s/CURRENT_PROJECT_VERSION[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)/CURRENT_PROJECT_VERSION = ${version}/g"
+    local code=$(version_to_code "${version}")
+
+    local p_version="s/CURRENT_PROJECT_VERSION[[:space:]]*=[[:space:]]*[0-9.]+/CURRENT_PROJECT_VERSION = ${code}/g"
     local m_version="s/MARKETING_VERSION[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)/MARKETING_VERSION = ${version}/g"
 
     sed -E -i .bak -e "${p_version}" -e "${m_version}" "$1"
