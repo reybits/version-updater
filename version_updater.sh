@@ -6,19 +6,21 @@
 #  and@reybits.dev
 #
 #  Version updater script.
-#  v0.5.3, 2026.06.21
+#  v0.6.0, 2026.07.05
 #
 #  Usage:
 #    ./version_updater.sh <TYPE> <VERSION> <PATH/TO/FILE> [BUNDLE_NAME]
 #
 #  Version format:
-#    X.Y.Z
+#    X.Y.Z[.B]
 #  Where:
 #    X - major version
 #    Y - minor version
 #    Z - patch version
-#    X, Y, Z - integers, no leading zeros allowed,
-#              not more than 2 digits each.
+#    B - build number (optional, default 0); bumps the numeric build
+#        code while the X.Y.Z marketing version stays fixed
+#    X, Y, Z, B - integers, no leading zeros allowed,
+#                 not more than 2 digits each.
 #
 ################################################
 
@@ -34,6 +36,15 @@ type="$1"
 version="$2"
 file_path="$3"
 
+# Split an optional 4th "build" component: X.Y.Z[.BUILD] (Apple-style
+# Version + Build). 'version' is reduced to the marketing X.Y.Z used in
+# every human-facing string; 'build' (default 0) feeds the low two digits
+# of the numeric build code, so rebuilds of one marketing version stay
+# strictly increasing.
+IFS='.' read -r major minor patch build <<<"${version}"
+build="${build:-0}"
+version="${major}.${minor}.${patch}"
+
 # ------------------------------------------------------------------------------
 
 remove_bak() {
@@ -43,8 +54,10 @@ remove_bak() {
 }
 
 # ------------------------------------------------------------------------------
-# Convert a marketing version "X.Y.Z" into a numeric build code.
-# Each component is zero-padded to two digits and concatenated (6.24.3 -> 62403).
+# Convert a version "X.Y.Z.B" into a numeric build code. Each component is
+# zero-padded to two digits and concatenated (6.24.3.0 -> 6240300,
+# 6.24.3.1 -> 6240301). The trailing build digits keep the code strictly
+# increasing across rebuilds of one marketing version.
 # ------------------------------------------------------------------------------
 
 version_to_code() {
@@ -65,7 +78,7 @@ version_to_code() {
 # ------------------------------------------------------------------------------
 
 update_html() {
-    local code=$(version_to_code "${version}")
+    local code=$(version_to_code "${version}.${build}")
 
     local regex_build="s/build=\"[0-9.]+\"/build=\"${code}\"/g"
     local regex_version="s/version=\"([0-9]+\.[0-9]+\.[0-9]+)\"/version=\"${version}\"/g"
@@ -107,7 +120,7 @@ update_cpp() {
 # ------------------------------------------------------------------------------
 
 update_gradle() {
-    local code=$(version_to_code "${version}")
+    local code=$(version_to_code "${version}.${build}")
 
     local version_code="s/versionCode[[:space:]]*=[[:space:]]*([0-9]+)/versionCode = ${code}/g"
     local version_name="s/versionName[[:space:]]*=[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+)\"/versionName = \"${version}\"/g"
@@ -123,7 +136,7 @@ update_gradle() {
 # ------------------------------------------------------------------------------
 
 update_xcode() {
-    local code=$(version_to_code "${version}")
+    local code=$(version_to_code "${version}.${build}")
 
     local p_version="s/CURRENT_PROJECT_VERSION[[:space:]]*=[[:space:]]*[0-9.]+/CURRENT_PROJECT_VERSION = ${code}/g"
     local m_version="s/MARKETING_VERSION[[:space:]]*=[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+)/MARKETING_VERSION = ${version}/g"
@@ -160,13 +173,13 @@ update_windows() {
     local comma_version="${version//\./,}"
 
     # VALUE "FileVersion", "0.2.1.0"
-    local fileVersion="s/\"FileVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"FileVersion\", \"${version}.0\"/g"
+    local fileVersion="s/\"FileVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"FileVersion\", \"${version}.${build}\"/g"
     # VALUE "ProductVersion", "0.2.1.0"
-    local productVersion="s/\"ProductVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"ProductVersion\", \"${version}.0\"/g"
+    local productVersion="s/\"ProductVersion\",[[:space:]]*\"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\"/\"ProductVersion\", \"${version}.${build}\"/g"
     # FILEVERSION 1,0,3,0
-    local fileVersionNum="s/FILEVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/FILEVERSION ${comma_version},0/g"
+    local fileVersionNum="s/FILEVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/FILEVERSION ${comma_version},${build}/g"
     # PRODUCTVERSION 1,0,3,0
-    local productVersionNum="s/PRODUCTVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/PRODUCTVERSION ${comma_version},0/g"
+    local productVersionNum="s/PRODUCTVERSION[[:space:]]+([0-9]+,[0-9]+,[0-9]+,[0-9]+)/PRODUCTVERSION ${comma_version},${build}/g"
 
     cat "$1" | iconv -f utf-16 -t utf-8 | sed -E -e "${fileVersion}" -e "${productVersion}" -e "${fileVersionNum}" -e "${productVersionNum}" | iconv -f utf-8 -t utf-16 >"$1.bak"
     mv "$1.bak" "$1"
